@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Problem Solving Assignment</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #080810;
+    --surface: #0f0f1a;
+    --border: #1e1e35;
+    --p1: #ff3366;
+    --p2: #00d4ff;
+    --text: #e8e8f0;
+    --muted: #555570;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 32px 16px;
+    overflow-x: hidden;
+  }
+
+  /* Animated grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(var(--border) 1px, transparent 1px),
+      linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    background-size: 60px 60px;
+    opacity: 0.4;
+    z-index: 0;
+  }
+
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(ellipse at 50% 50%, transparent 30%, var(--bg) 80%);
+    z-index: 0;
+  }
+
+  .wrap {
+    position: relative;
+    z-index: 1;
+    max-width: 720px;
+    width: 100%;
+    text-align: center;
+  }
+
+  .badge {
+    display: inline-block;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 5px 16px;
+    font-size: 0.65rem;
+    color: var(--muted);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+    animation: fadeDown 0.6s ease both;
+  }
+
+  h1 {
+    font-family: 'Orbitron', sans-serif;
+    font-size: clamp(1.8rem, 6vw, 3.2rem);
+    font-weight: 900;
+    line-height: 1.1;
+    letter-spacing: -1px;
+    margin-bottom: 12px;
+    animation: fadeDown 0.7s ease both;
+  }
+
+  h1 .grad {
+    background: linear-gradient(135deg, var(--p1) 0%, var(--p2) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .tagline {
+    color: var(--muted);
+    font-size: 0.78rem;
+    letter-spacing: 2px;
+    margin-bottom: 48px;
+    animation: fadeDown 0.8s ease both;
+  }
+
+  /* Cards */
+  .cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 40px;
+  }
+
+  @media (max-width: 520px) { .cards { grid-template-columns: 1fr; } }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 28px 24px;
+    text-align: left;
+    text-decoration: none;
+    color: var(--text);
+    transition: transform 0.25s, border-color 0.25s, box-shadow 0.25s;
+    position: relative;
+    overflow: hidden;
+    animation: fadeUp 0.6s ease both;
+  }
+
+  .card:nth-child(2) { animation-delay: 0.1s; }
+
+  .card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    transition: opacity 0.3s;
+    border-radius: 20px;
+  }
+
+  .card.p1::before { background: radial-gradient(circle at 30% 30%, #ff336615 0%, transparent 60%); }
+  .card.p2::before { background: radial-gradient(circle at 30% 30%, #00d4ff15 0%, transparent 60%); }
+
+  .card:hover { transform: translateY(-6px); }
+  .card:hover::before { opacity: 1; }
+  .card.p1:hover { border-color: var(--p1); box-shadow: 0 0 40px #ff336622, 0 20px 40px #00000060; }
+  .card.p2:hover { border-color: var(--p2); box-shadow: 0 0 40px #00d4ff22, 0 20px 40px #00000060; }
+
+  .prob-num {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.65rem;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    font-weight: 700;
+  }
+
+  .card.p1 .prob-num { color: var(--p1); }
+  .card.p2 .prob-num { color: var(--p2); }
+
+  .card h2 {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    margin-bottom: 10px;
+    line-height: 1.3;
+  }
+
+  .card p {
+    font-size: 0.7rem;
+    color: var(--muted);
+    line-height: 1.7;
+    margin-bottom: 18px;
+  }
+
+  .tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 20px;
+  }
+
+  .tag {
+    background: var(--border);
+    border-radius: 4px;
+    padding: 3px 8px;
+    font-size: 0.6rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .card.p1 .tag { background: #ff336618; color: var(--p1); }
+  .card.p2 .tag { background: #00d4ff18; color: var(--p2); }
+
+  .launch-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 10px 16px;
+    border-radius: 8px;
+    border: 1px solid;
+    width: 100%;
+    justify-content: center;
+    transition: all 0.2s;
+    cursor: pointer;
+    text-decoration: none;
+  }
+
+  .card.p1 .launch-btn { border-color: var(--p1); color: var(--p1); }
+  .card.p2 .launch-btn { border-color: var(--p2); color: var(--p2); }
+  .card.p1 .launch-btn:hover { background: var(--p1); color: white; }
+  .card.p2 .launch-btn:hover { background: var(--p2); color: #000; }
+
+  .arrow { font-size: 1rem; transition: transform 0.2s; }
+  .launch-btn:hover .arrow { transform: translateX(4px); }
+
+  /* Footer info */
+  .info {
+    display: flex;
+    gap: 24px;
+    justify-content: center;
+    flex-wrap: wrap;
+    font-size: 0.65rem;
+    color: var(--muted);
+    letter-spacing: 1px;
+    animation: fadeUp 1s ease both;
+    animation-delay: 0.3s;
+  }
+
+  .info span { display: flex; align-items: center; gap: 6px; }
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--muted); }
+  .dot.green { background: #2ecc71; box-shadow: 0 0 8px #2ecc71; }
+
+  @keyframes fadeDown {
+    from { opacity: 0; transform: translateY(-20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="badge">Artificial Intelligence — Assignment</div>
+
+  <h1><span class="grad">AI Problem</span><br>Solving</h1>
+  <p class="tagline">Interactive Demos &nbsp;·&nbsp; Two Problems &nbsp;·&nbsp; Live in Browser</p>
+
+  <div class="cards">
+
+    <!-- Problem 1 -->
+    <a class="card p1" href="Problem1_TicTacToe/problem1_tictactoe.html">
+      <div class="prob-num">Problem 01</div>
+      <h2>Tic-Tac-Toe Game AI</h2>
+      <p>Play against an unbeatable AI. Compare Minimax and Alpha-Beta Pruning side-by-side with live node count and timing.</p>
+      <div class="tags">
+        <span class="tag">Minimax</span>
+        <span class="tag">Alpha-Beta</span>
+        <span class="tag">Game AI</span>
+      </div>
+      <div class="launch-btn">Launch Demo <span class="arrow">→</span></div>
+    </a>
+
+    <!-- Problem 8 -->
+    <a class="card p2" href="Problem8_Navigation/problem8_navigation.html">
+      <div class="prob-num">Problem 08</div>
+      <h2>Smart Navigation System</h2>
+      <p>Build custom graphs or load presets. Find paths using BFS and DFS with live canvas visualization and comparison.</p>
+      <div class="tags">
+        <span class="tag">BFS</span>
+        <span class="tag">DFS</span>
+        <span class="tag">Graph Search</span>
+      </div>
+      <div class="launch-btn">Launch Demo <span class="arrow">→</span></div>
+    </a>
+
+  </div>
+
+  <div class="info">
+    <span><span class="dot green"></span> Live on GitHub Pages</span>
+    <span><span class="dot"></span> HTML / JavaScript</span>
+    <span><span class="dot"></span> No install required</span>
+  </div>
+
+</div>
+</body>
+</html>
