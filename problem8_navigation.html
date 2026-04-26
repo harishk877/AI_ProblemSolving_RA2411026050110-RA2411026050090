@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Navigation System | Problem 8</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f0ede8;
+    --surface: #ffffff;
+    --panel: #faf8f5;
+    --border: #d8d4cc;
+    --accent: #1a1a2e;
+    --accent2: #e63946;
+    --bfs: #2a9d8f;
+    --dfs: #e76f51;
+    --path-color: #264653;
+    --node-default: #ffffff;
+    --node-border: #1a1a2e;
+    --text: #1a1a2e;
+    --muted: #888880;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Space Mono', monospace;
+    min-height: 100vh;
+    padding: 24px 16px;
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 24px;
+  }
+
+  h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(1.5rem, 4vw, 2.4rem);
+    font-weight: 800;
+    letter-spacing: -1px;
+    color: var(--text);
+    line-height: 1;
+  }
+
+  h1 span { color: var(--accent2); }
+
+  .subtitle {
+    font-size: 0.7rem;
+    color: var(--muted);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-top: 6px;
+  }
+
+  .app {
+    max-width: 1000px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: 20px;
+  }
+
+  @media (max-width: 680px) {
+    .app { grid-template-columns: 1fr; }
+  }
+
+  /* ── Panel ── */
+  .panel {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 16px;
+    padding: 20px;
+  }
+
+  .panel-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    color: var(--muted);
+    margin-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 10px;
+  }
+
+  label {
+    display: block;
+    font-size: 0.67rem;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--muted);
+    margin-bottom: 5px;
+    margin-top: 14px;
+  }
+
+  label:first-of-type { margin-top: 0; }
+
+  input[type="text"] {
+    width: 100%;
+    padding: 9px 12px;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    background: var(--panel);
+    font-family: 'Space Mono', monospace;
+    font-size: 0.8rem;
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  input[type="text"]:focus { border-color: var(--accent); }
+
+  .hint {
+    font-size: 0.62rem;
+    color: var(--muted);
+    margin-top: 4px;
+    line-height: 1.5;
+  }
+
+  .btn-row { display: flex; gap: 8px; margin-top: 14px; }
+
+  .btn {
+    flex: 1;
+    padding: 9px 8px;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.7rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    background: var(--surface);
+    color: var(--text);
+  }
+
+  .btn:hover { background: var(--bg); }
+  .btn.primary { background: var(--accent); color: white; border-color: var(--accent); }
+  .btn.primary:hover { opacity: 0.85; }
+  .btn.danger { background: var(--accent2); color: white; border-color: var(--accent2); }
+  .btn.danger:hover { opacity: 0.85; }
+
+  /* Presets */
+  .presets { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
+
+  .preset-btn {
+    padding: 8px 12px;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    background: var(--panel);
+    font-family: 'Space Mono', monospace;
+    font-size: 0.68rem;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: left;
+    color: var(--text);
+  }
+
+  .preset-btn:hover { border-color: var(--accent); background: var(--surface); }
+  .preset-btn strong { display: block; color: var(--accent); font-size: 0.72rem; }
+
+  /* ── Graph Canvas ── */
+  .graph-area {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .canvas-wrap {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+    position: relative;
+  }
+
+  #graphCanvas {
+    display: block;
+    width: 100%;
+    height: 340px;
+  }
+
+  .canvas-toolbar {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    display: flex;
+    gap: 8px;
+  }
+
+  .toolbar-btn {
+    padding: 5px 10px;
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 6px;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.62rem;
+    cursor: pointer;
+    transition: all 0.15s;
+    color: var(--text);
+  }
+
+  .toolbar-btn:hover { background: var(--bg); }
+  .toolbar-btn.active-bfs { background: var(--bfs); color: white; border-color: var(--bfs); }
+  .toolbar-btn.active-dfs { background: var(--dfs); color: white; border-color: var(--dfs); }
+
+  /* ── Results ── */
+  .results-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .result-card {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    padding: 14px;
+    transition: border-color 0.3s;
+  }
+
+  .result-card.bfs-card { border-top: 3px solid var(--bfs); }
+  .result-card.dfs-card { border-top: 3px solid var(--dfs); }
+
+  .result-card h3 {
+    font-family: 'Syne', sans-serif;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 10px;
+  }
+
+  .result-card.bfs-card h3 { color: var(--bfs); }
+  .result-card.dfs-card h3 { color: var(--dfs); }
+
+  .metric { margin-bottom: 8px; }
+  .metric-label { font-size: 0.6rem; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); }
+  .metric-val {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--text);
+    word-break: break-all;
+    line-height: 1.4;
+  }
+
+  .path-display {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 4px;
+  }
+
+  .path-node {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 2px 7px;
+    font-size: 0.7rem;
+    font-weight: 700;
+  }
+
+  .path-arrow { color: var(--muted); font-size: 0.7rem; align-self: center; }
+
+  .no-path { color: var(--accent2); font-size: 0.75rem; }
+
+  /* Explored list */
+  .explored-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 3px;
+    margin-top: 4px;
+  }
+
+  .chip {
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-size: 0.62rem;
+    font-weight: 700;
+  }
+
+  .chip.bfs-chip { background: #2a9d8f22; color: var(--bfs); border: 1px solid #2a9d8f44; }
+  .chip.dfs-chip { background: #e76f5122; color: var(--dfs); border: 1px solid #e76f5144; }
+
+  /* Comparison banner */
+  .comparison {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    padding: 14px;
+    font-size: 0.72rem;
+    line-height: 1.7;
+    color: var(--muted);
+  }
+
+  .comparison strong { color: var(--text); }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--accent);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 0.75rem;
+    transition: transform 0.3s;
+    z-index: 999;
+  }
+
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  /* Animation classes applied by JS to canvas nodes */
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Smart <span>Navigation</span> System</h1>
+  <p class="subtitle">Problem 8 &nbsp;|&nbsp; BFS vs DFS Graph Search</p>
+</header>
+
+<div class="app">
+
+  <!-- Left Panel -->
+  <div>
+    <div class="panel">
+      <div class="panel-title">Build Your Graph</div>
+
+      <label>Add Node (single letter)</label>
+      <input type="text" id="nodeInput" placeholder="e.g. A" maxlength="2">
+
+      <label>Add Edge (node–node)</label>
+      <input type="text" id="edgeInput" placeholder="e.g. A-B">
+      <p class="hint">Undirected edges. Use dash between nodes.</p>
+
+      <div class="btn-row">
+        <button class="btn primary" onclick="addNode()">+ Node</button>
+        <button class="btn primary" onclick="addEdge()">+ Edge</button>
+      </div>
+
+      <div class="btn-row" style="margin-top:8px;">
+        <button class="btn danger" onclick="clearGraph()">Clear</button>
+      </div>
+
+      <div style="margin-top:16px;">
+        <div class="panel-title">Start & Goal</div>
+        <label>Start Node</label>
+        <input type="text" id="startNode" placeholder="e.g. A" maxlength="2">
+        <label>Goal Node</label>
+        <input type="text" id="goalNode" placeholder="e.g. F" maxlength="2">
+
+        <div class="btn-row" style="margin-top:12px;">
+          <button class="btn primary" onclick="runSearch()" style="background:#264653;border-color:#264653;">▶ Run Search</button>
+        </div>
+      </div>
+
+      <div style="margin-top:20px;">
+        <div class="panel-title">Sample Graphs</div>
+        <div class="presets">
+          <button class="preset-btn" onclick="loadPreset('city')">
+            <strong>City Network</strong>
+            8 nodes, 10 edges
+          </button>
+          <button class="preset-btn" onclick="loadPreset('tree')">
+            <strong>Binary Tree</strong>
+            7 nodes, 6 edges
+          </button>
+          <button class="preset-btn" onclick="loadPreset('grid')">
+            <strong>Grid Graph</strong>
+            9 nodes, 12 edges
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Area -->
+  <div class="graph-area">
+
+    <div class="canvas-wrap">
+      <canvas id="graphCanvas"></canvas>
+      <div class="canvas-toolbar">
+        <button class="toolbar-btn" id="show-all-btn" onclick="showAll()">Show All</button>
+        <button class="toolbar-btn active-bfs" id="show-bfs-btn" onclick="showBFS()">BFS Path</button>
+        <button class="toolbar-btn active-dfs" id="show-dfs-btn" onclick="showDFS()">DFS Path</button>
+      </div>
+    </div>
+
+    <div class="results-grid">
+      <div class="result-card bfs-card" id="bfs-card">
+        <h3>BFS Result</h3>
+        <div class="metric">
+          <div class="metric-label">Path Found</div>
+          <div class="metric-val" id="bfs-path">—</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Path Length</div>
+          <div class="metric-val" id="bfs-len">—</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Nodes Explored</div>
+          <div class="metric-val" id="bfs-explored">—</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Guaranteed Shortest?</div>
+          <div class="metric-val" style="color:var(--bfs)">✓ Yes</div>
+        </div>
+      </div>
+
+      <div class="result-card dfs-card" id="dfs-card">
+        <h3>DFS Result</h3>
+        <div class="metric">
+          <div class="metric-label">Path Found</div>
+          <div class="metric-val" id="dfs-path">—</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Path Length</div>
+          <div class="metric-val" id="dfs-len">—</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Nodes Explored</div>
+          <div class="metric-val" id="dfs-explored">—</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Guaranteed Shortest?</div>
+          <div class="metric-val" style="color:var(--dfs)">✗ No</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="comparison" id="comparison">
+      <strong>How to use:</strong> Load a sample graph or build your own, set Start &amp; Goal nodes, then click <strong>Run Search</strong>. The canvas will animate the path and the comparison panel will update.
+    </div>
+
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── Graph State ───────────────────────────────────────────────────────────
+const nodes = new Map(); // name → {x, y}
+const edges = new Set(); // "A-B"
+let bfsResult = null;
+let dfsResult = null;
+let displayMode = 'all';
+
+// ─── Canvas Setup ──────────────────────────────────────────────────────────
+const canvas = document.getElementById('graphCanvas');
+const ctx = canvas.getContext('2d');
+
+function resizeCanvas() {
+  const rect = canvas.parentElement.getBoundingClientRect();
+  canvas.width = rect.width;
+  canvas.height = 340;
+  drawGraph();
+}
+
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+
+// ─── Graph Management ─────────────────────────────────────────────────────
+function addNode() {
+  const val = document.getElementById('nodeInput').value.trim().toUpperCase();
+  if (!val) return toast('Enter a node name');
+  if (nodes.has(val)) return toast(`Node ${val} already exists`);
+
+  const angle = (nodes.size / Math.max(nodes.size + 1, 6)) * 2 * Math.PI - Math.PI / 2;
+  const cx = canvas.width / 2, cy = canvas.height / 2;
+  const r = Math.min(cx, cy) * 0.65;
+  const x = cx + r * Math.cos(angle);
+  const y = cy + r * Math.sin(angle);
+
+  nodes.set(val, { x, y });
+  document.getElementById('nodeInput').value = '';
+  drawGraph();
+  toast(`Node ${val} added`);
+}
+
+function addEdge() {
+  const val = document.getElementById('edgeInput').value.trim().toUpperCase().replace(/\s/g, '');
+  const parts = val.split('-');
+  if (parts.length !== 2) return toast('Use format A-B');
+  const [a, b] = parts;
+  if (!nodes.has(a)) return toast(`Node ${a} not found`);
+  if (!nodes.has(b)) return toast(`Node ${b} not found`);
+  const key = [a, b].sort().join('-');
+  if (edges.has(key)) return toast('Edge already exists');
+  edges.add(key);
+  document.getElementById('edgeInput').value = '';
+  drawGraph();
+  toast(`Edge ${a}–${b} added`);
+}
+
+function clearGraph() {
+  nodes.clear();
+  edges.clear();
+  bfsResult = null;
+  dfsResult = null;
+  clearResults();
+  drawGraph();
+}
+
+// ─── Presets ──────────────────────────────────────────────────────────────
+const PRESETS = {
+  city: {
+    nodes: { A:[0.15,0.2], B:[0.4,0.1], C:[0.7,0.15], D:[0.85,0.4],
+             E:[0.7,0.7], F:[0.4,0.85], G:[0.15,0.6], H:[0.5,0.45] },
+    edges: ['A-B','A-G','B-C','B-H','C-D','D-E','E-F','E-H','F-G','G-H'],
+    start: 'A', goal: 'E'
+  },
+  tree: {
+    nodes: { A:[0.5,0.1], B:[0.3,0.35], C:[0.7,0.35],
+             D:[0.15,0.65], E:[0.45,0.65], F:[0.55,0.65], G:[0.85,0.65] },
+    edges: ['A-B','A-C','B-D','B-E','C-F','C-G'],
+    start: 'A', goal: 'G'
+  },
+  grid: {
+    nodes: { A:[0.2,0.2], B:[0.5,0.2], C:[0.8,0.2],
+             D:[0.2,0.5], E:[0.5,0.5], F:[0.8,0.5],
+             G:[0.2,0.8], H:[0.5,0.8], I:[0.8,0.8] },
+    edges: ['A-B','B-C','D-E','E-F','G-H','H-I','A-D','D-G','B-E','E-H','C-F','F-I'],
+    start: 'A', goal: 'I'
+  }
+};
+
+function loadPreset(name) {
+  clearGraph();
+  const p = PRESETS[name];
+  for (const [n, [rx, ry]] of Object.entries(p.nodes)) {
+    nodes.set(n, { x: canvas.width * rx, y: canvas.height * ry });
+  }
+  for (const e of p.edges) edges.add(e);
+  document.getElementById('startNode').value = p.start;
+  document.getElementById('goalNode').value = p.goal;
+  drawGraph();
+  toast(`Loaded: ${name}`);
+}
+
+// ─── BFS ──────────────────────────────────────────────────────────────────
+function buildAdjacency() {
+  const adj = new Map();
+  for (const n of nodes.keys()) adj.set(n, []);
+  for (const e of edges) {
+    const [a, b] = e.split('-');
+    adj.get(a).push(b);
+    adj.get(b).push(a);
+  }
+  return adj;
+}
+
+function bfs(start, goal) {
+  const adj = buildAdjacency();
+  const visited = new Set();
+  const queue = [[start, [start]]];
+  const explored = [];
+  visited.add(start);
+
+  while (queue.length) {
+    const [curr, path] = queue.shift();
+    explored.push(curr);
+    if (curr === goal) return { path, explored, found: true };
+    for (const nb of (adj.get(curr) || []).sort()) {
+      if (!visited.has(nb)) {
+        visited.add(nb);
+        queue.push([nb, [...path, nb]]);
+      }
+    }
+  }
+  return { path: [], explored, found: false };
+}
+
+function dfs(start, goal) {
+  const adj = buildAdjacency();
+  const visited = new Set();
+  const explored = [];
+
+  function recurse(curr, path) {
+    visited.add(curr);
+    explored.push(curr);
+    if (curr === goal) return path;
+    for (const nb of (adj.get(curr) || []).sort()) {
+      if (!visited.has(nb)) {
+        const result = recurse(nb, [...path, nb]);
+        if (result) return result;
+      }
+    }
+    return null;
+  }
+
+  const path = recurse(start, [start]);
+  return { path: path || [], explored, found: !!path };
+}
+
+// ─── Run ──────────────────────────────────────────────────────────────────
+function runSearch() {
+  const start = document.getElementById('startNode').value.trim().toUpperCase();
+  const goal = document.getElementById('goalNode').value.trim().toUpperCase();
+
+  if (!start || !goal) return toast('Enter start and goal nodes');
+  if (!nodes.has(start)) return toast(`Start node ${start} not found`);
+  if (!nodes.has(goal)) return toast(`Goal node ${goal} not found`);
+
+  bfsResult = bfs(start, goal);
+  dfsResult = dfs(start, goal);
+
+  updateResults(start, goal);
+  displayMode = 'all';
+  drawGraph();
+}
+
+function updateResults(start, goal) {
+  // BFS
+  if (bfsResult.found) {
+    document.getElementById('bfs-path').innerHTML = makePathHTML(bfsResult.path, 'bfs');
+    document.getElementById('bfs-len').textContent = `${bfsResult.path.length - 1} edges`;
+  } else {
+    document.getElementById('bfs-path').innerHTML = '<span class="no-path">No path found</span>';
+    document.getElementById('bfs-len').textContent = '—';
+  }
+  document.getElementById('bfs-explored').innerHTML = makeChipsHTML(bfsResult.explored, 'bfs');
+
+  // DFS
+  if (dfsResult.found) {
+    document.getElementById('dfs-path').innerHTML = makePathHTML(dfsResult.path, 'dfs');
+    document.getElementById('dfs-len').textContent = `${dfsResult.path.length - 1} edges`;
+  } else {
+    document.getElementById('dfs-path').innerHTML = '<span class="no-path">No path found</span>';
+    document.getElementById('dfs-len').textContent = '—';
+  }
+  document.getElementById('dfs-explored').innerHTML = makeChipsHTML(dfsResult.explored, 'dfs');
+
+  // Comparison
+  const comp = document.getElementById('comparison');
+  const bfsLen = bfsResult.found ? bfsResult.path.length - 1 : '∞';
+  const dfsLen = dfsResult.found ? dfsResult.path.length - 1 : '∞';
+  const bfsEx = bfsResult.explored.length;
+  const dfsEx = dfsResult.explored.length;
+
+  comp.innerHTML = `
+    <strong>Comparison (${start} → ${goal}):</strong><br>
+    <strong style="color:var(--bfs)">BFS</strong> explores nodes level-by-level → 
+    <strong>${bfsEx}</strong> nodes visited, path length <strong>${bfsLen}</strong>. 
+    Guarantees the <em>shortest</em> path.<br>
+    <strong style="color:var(--dfs)">DFS</strong> dives deep first → 
+    <strong>${dfsEx}</strong> nodes visited, path length <strong>${dfsLen}</strong>. 
+    Faster in some cases but <em>not guaranteed</em> to find shortest path.
+    ${bfsEx < dfsEx ? ' <strong>BFS explored fewer nodes here.</strong>' :
+      dfsEx < bfsEx ? ' <strong>DFS explored fewer nodes here.</strong>' : ''}
+  `;
+}
+
+function makePathHTML(path, type) {
+  if (!path.length) return '<span class="no-path">No path</span>';
+  return path.map((n, i) =>
+    `<span class="path-node" style="border-color:var(--${type})">${n}</span>` +
+    (i < path.length - 1 ? '<span class="path-arrow">→</span>' : '')
+  ).join('');
+}
+
+function makeChipsHTML(explored, type) {
+  return explored.map(n =>
+    `<span class="chip ${type}-chip">${n}</span>`
+  ).join('');
+}
+
+// ─── Drawing ──────────────────────────────────────────────────────────────
+function showAll() { displayMode = 'all'; drawGraph(); }
+function showBFS() { displayMode = 'bfs'; drawGraph(); }
+function showDFS() { displayMode = 'dfs'; drawGraph(); }
+
+function getPathEdges(path) {
+  const set = new Set();
+  for (let i = 0; i < path.length - 1; i++) {
+    set.add([path[i], path[i+1]].sort().join('-'));
+  }
+  return set;
+}
+
+function drawGraph() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  const bfsPath = bfsResult?.found ? bfsResult.path : [];
+  const dfsPath = dfsResult?.found ? dfsResult.path : [];
+  const bfsEdges = getPathEdges(bfsPath);
+  const dfsEdges = getPathEdges(dfsPath);
+
+  // Draw edges
+  for (const e of edges) {
+    const [a, b] = e.split('-');
+    const na = nodes.get(a), nb = nodes.get(b);
+    if (!na || !nb) continue;
+
+    const inBFS = bfsEdges.has(e);
+    const inDFS = dfsEdges.has(e);
+    const inBoth = inBFS && inDFS;
+
+    ctx.beginPath();
+    ctx.moveTo(na.x, na.y);
+    ctx.lineTo(nb.x, nb.y);
+
+    if (displayMode === 'all') {
+      if (inBoth) {
+        ctx.strokeStyle = '#9b59b6';
+        ctx.lineWidth = 4;
+        ctx.setLineDash([]);
+      } else if (inBFS) {
+        ctx.strokeStyle = '#2a9d8f';
+        ctx.lineWidth = 3.5;
+        ctx.setLineDash([]);
+      } else if (inDFS) {
+        ctx.strokeStyle = '#e76f51';
+        ctx.lineWidth = 3.5;
+        ctx.setLineDash([6, 3]);
+      } else {
+        ctx.strokeStyle = '#d8d4cc';
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([]);
+      }
+    } else if (displayMode === 'bfs') {
+      ctx.strokeStyle = inBFS ? '#2a9d8f' : '#ebe8e3';
+      ctx.lineWidth = inBFS ? 3.5 : 1;
+      ctx.setLineDash([]);
+    } else {
+      ctx.strokeStyle = inDFS ? '#e76f51' : '#ebe8e3';
+      ctx.lineWidth = inDFS ? 3.5 : 1;
+      ctx.setLineDash(inDFS ? [] : []);
+    }
+
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  // Draw edge labels (distance = 1 implied)
+  const NODE_R = 22;
+
+  // Draw nodes
+  const startVal = document.getElementById('startNode').value.trim().toUpperCase();
+  const goalVal = document.getElementById('goalNode').value.trim().toUpperCase();
+
+  for (const [name, pos] of nodes) {
+    const inBFSPath = bfsPath.includes(name);
+    const inDFSPath = dfsPath.includes(name);
+    const isStart = name === startVal;
+    const isGoal = name === goalVal;
+
+    ctx.beginPath();
+    ctx.arc(pos.x, pos.y, NODE_R, 0, Math.PI * 2);
+
+    let fillColor = '#ffffff';
+    let strokeColor = '#1a1a2e';
+    let strokeW = 1.5;
+
+    if (isStart) { fillColor = '#264653'; strokeColor = '#264653'; }
+    else if (isGoal) { fillColor = '#e63946'; strokeColor = '#e63946'; }
+    else if (displayMode === 'all') {
+      if (inBFSPath && inDFSPath) { fillColor = '#f0e6ff'; strokeColor = '#9b59b6'; strokeW = 2.5; }
+      else if (inBFSPath) { fillColor = '#e8f8f6'; strokeColor = '#2a9d8f'; strokeW = 2.5; }
+      else if (inDFSPath) { fillColor = '#fef2ee'; strokeColor = '#e76f51'; strokeW = 2.5; }
+    } else if (displayMode === 'bfs' && inBFSPath) {
+      fillColor = '#e8f8f6'; strokeColor = '#2a9d8f'; strokeW = 2.5;
+    } else if (displayMode === 'dfs' && inDFSPath) {
+      fillColor = '#fef2ee'; strokeColor = '#e76f51'; strokeW = 2.5;
+    }
+
+    ctx.fillStyle = fillColor;
+    ctx.fill();
+    ctx.strokeStyle = strokeColor;
+    ctx.lineWidth = strokeW;
+    ctx.stroke();
+
+    ctx.fillStyle = (isStart || isGoal) ? 'white' : '#1a1a2e';
+    ctx.font = `bold 13px 'Space Mono', monospace`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(name, pos.x, pos.y);
+
+    // Label for start/goal
+    if (isStart || isGoal) {
+      ctx.font = '10px Space Mono';
+      ctx.fillStyle = isStart ? '#264653' : '#e63946';
+      ctx.fillText(isStart ? 'START' : 'GOAL', pos.x, pos.y + NODE_R + 10);
+    }
+  }
+}
+
+// ─── Helpers ──────────────────────────────────────────────────────────────
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2000);
+}
+
+function clearResults() {
+  ['bfs-path','bfs-len','bfs-explored','dfs-path','dfs-len','dfs-explored'].forEach(id => {
+    document.getElementById(id).textContent = '—';
+  });
+  document.getElementById('comparison').innerHTML = '<strong>How to use:</strong> Load a sample graph or build your own, set Start &amp; Goal nodes, then click <strong>Run Search</strong>.';
+}
+
+// ─── Boot ──────────────────────────────────────────────────────────────────
+loadPreset('city');
+</script>
+</body>
+</html>
